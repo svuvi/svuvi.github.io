@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wordsearch App</title>
+    <link href="build.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 dark:bg-neutral-700 dark:text-white">
+<div class="w-full max-w-3xl mx-auto p-4 md:p-6">
+    <p class="pb-6 text-neutral-400">In ontwikkeling. De knop "Bewerken" werkt nog niet</p>
+    <div class="flex items-center gap-2 mb-4">
+        <div id="dropdownGroup" class="relative">
+            <button id="dropdownHoverButton" class="bg-gray-300 dark:bg-neutral-600 hover:bg-gray-400 dark:hover:bg-neutral-500 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2" type="button">
+                <svg class="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 4h3a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3m0 3h6m-6 5h6m-6 4h6M10 3v4h4V3h-4Z"/>
+                </svg>
+            </button>
+            
+            <!-- Dropdown menu -->
+            <div id="dropdownHover" class="z-10 hidden absolute top-full mt-2 w-44 bg-white divide-y divide-gray-100 rounded-lg shadow dark:bg-neutral-600">
+                <div id="dropdownMenu" class="py-2 text-sm text-neutral-700 dark:text-gray-200" aria-labelledby="dropdownHoverButton">
+                    <button onclick="saveDataToFile()" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white text-left w-full">Gegevens downloaden</button>
+                    <button onclick="loadFile('replace')" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white text-left w-full">Open bestand (vervangen)</button>
+                    <button onclick="loadFile('merge')" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white text-left w-full">Bestand samenvoegen</button>
+                </div>
+            </div>
+            <input type="file" id="fileInput" style="display: none;" onchange="handleFile(event)">
+        </div>
+        <input
+            id="woord-value"
+            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 flex-1 dark:bg-neutral-600 dark:border-none dark:hover:bg-neutral-500"
+            placeholder="woord"
+            type="text"
+            value=""
+            autocomplete="off"
+            oninput="listWord()"
+        />
+        <input
+            id="vertaling-value"
+            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 flex-1 dark:bg-neutral-600 dark:border-none dark:hover:bg-neutral-500"
+            placeholder="vertaling/aantekening"
+            type="text"
+            value=""
+            autocomplete="off"
+            oninput="listWord()"
+        />
+        <button onclick="addWord()" class="bg-gray-300 dark:bg-neutral-600 hover:bg-gray-400 dark:hover:bg-neutral-500 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
+            +nieuw
+        </button>
+    </div>
+    <div class="border rounded-lg overflow-hidden">
+      <div class="relative w-full overflow-auto">
+        <table class="w-full caption-bottom text-sm">
+          <thead class="[&amp;_tr]:border-b">
+            <tr class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+              <th id="word-counter" class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0">
+                woorden
+              </th>
+              <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0">
+                vertaling / anntekening
+              </th>
+              <th class="h-12 px-4 align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0 text-right">
+                acties
+              </th>
+            </tr>
+          </thead>
+            <tbody id="words-table" class="[&amp;_tr:last-child]:border-0">
+            
+            </tbody>
+        </table>
+    </div>
+  </div>
+</div>
+<script>
+    let addWord = () => {
+        let word = document.getElementById('woord-value').value;
+        let translation = document.getElementById('vertaling-value').value;
+        document.getElementById('woord-value').value = ''
+        document.getElementById('vertaling-value').value = ''
+        if(word != '' && translation != ''){
+            setData(word, translation); // handler for adding item into local storage
+            listWord(); // handler for showing item from local storage
+        }
+    }
+
+    let getData = (item = null) => {
+        let data = JSON.parse(localStorage.getItem('mywords'));
+        if(data){
+            // console.log(data);
+            if(item) {
+                if(data[item]){
+                    return data[item];
+                }else{
+                    return false;
+                }
+            }
+            return data;
+        }
+        return false;
+    }
+
+    let setData = (word, translation) => {
+        if(getData(word) != false) {
+            alert("Item already added in list");
+        }else{
+            let data = getData();
+            data = (data != false) ? data : {};
+            data[word] = translation;
+            data = JSON.stringify(data);
+            localStorage.setItem('mywords', data);
+        }
+    }
+
+    let listWord = () => {
+        let wordQuery = document.getElementById('woord-value').value
+        let translationQuery = document.getElementById('vertaling-value').value
+        let html = ``;
+        let data = getData()
+        let wordsMatched = 0
+        if(data){
+            for (const [word, translation] of Object.entries(data)) {
+                
+                if (wordQuery != null || translationQuery != null) {
+                    if (!(word.toLowerCase().includes(wordQuery.toLowerCase()) && translation.toLowerCase().includes(translationQuery.toLowerCase()))) {
+                        continue
+                    }
+                }
+                wordHighlighted = wordQuery != null ? word.replace(new RegExp(wordQuery, "gi"), match => `<mark>${match}</mark>`) : word;
+                translationHighlighted = translationQuery != null ? translation.replace(new RegExp(translationQuery, "gi"), match => `<mark>${match}</mark>`) : translation;
+
+                wordsMatched++;
+                html += `<tr class="border-b transition-colors hover:bg-muted/50">
+              <td id='${word}-word' class="p-4 align-middle ont-medium">${wordHighlighted}</td>
+              <td id='${word}-translation' class="p-4 align-middle">${translationHighlighted}</td>
+              <td id='${word}-actions' class="p-4 align-middle text-right flex flex-row">
+                <button onclick="editData('${word}')" class="action-button">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="h-4 w-4 dark:stroke-white"
+                    >
+                    <path d="M12 22h6a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v10"></path>
+                    <path d="M14 2v4a2 2 0 0 0 2 2h4"></path>
+                    <path d="M10.4 12.6a2 2 0 1 1 3 3L8 21l-4 1 1-4Z"></path>
+                </svg>
+                <span class="sr-only">Bewerken</span>
+                </button>
+                <button onclick="removeData('${word}')" class="action-button">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="h-4 w-4 dark:stroke-white"
+                    >
+                    <path d="M3 6h18"></path>
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                </svg>
+                  <span class="sr-only">Verwijderen</span>
+                </button>
+              </td>
+            </tr>`
+            }
+            document.getElementById('words-table').innerHTML = html;
+            
+
+        }
+        let wordsTotal = Object.keys(data).length;
+        if (wordsTotal == 0) {
+            document.getElementById('word-counter').innerHTML = "(geen) woorden";
+            document.getElementById('words-table').innerHTML = `<tr><td colspan="3" class="p-4 align-middle text-center text-slate-400">Er zijn geen woorden opgeslagen op dit apparaat! <br> Begin met het typen van een nieuw woord of door uw savefile te uploaden.</td></tr>`;
+        } else if(wordsMatched == wordsTotal) {
+            document.getElementById('word-counter').innerHTML = `${wordsTotal} woorden`;
+        } else {
+            document.getElementById('word-counter').innerHTML = `${wordsMatched}/${wordsTotal} woorden`;
+        }
+    }
+
+    let removeData = (word) => {
+        let data = getData();
+        if(data){
+            delete data[word];
+            data = JSON.stringify(data);
+            localStorage.setItem('mywords', data);
+            listWord();
+        }else{
+            alert("No data found");
+        }
+    }
+
+    let saveDataToFile = () => {
+        const data = localStorage.getItem('mywords');
+        if (!data || data === '{}') {
+            alert('Geen gegevens om op te slaan!');
+            return;
+        }
+        const blob = new Blob([data], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.download = 'woorden.json';
+        link.href = window.URL.createObjectURL(blob);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    let loadFile = (action) => {
+        // Store the action (replace or merge) in a global variable
+        window.fileAction = action;
+        // Trigger the file input click
+        document.getElementById('fileInput').click();
+    }
+
+    let handleFile = (event) => {
+        const file = event.target.files[0];
+        if (!file) {
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const fileData = JSON.parse(e.target.result);
+                const currentData = JSON.parse(localStorage.getItem('mywords') || '{}');
+
+                if (window.fileAction === 'replace') {
+                    // Replace the current data
+                    localStorage.setItem('mywords', JSON.stringify(fileData));
+                } else if (window.fileAction === 'merge') {
+                    // Merge the data
+                    // TODO: handle duplicate keys
+                    const mergedData = { ...currentData, ...fileData };
+                    localStorage.setItem('mywords', JSON.stringify(mergedData));
+                } else {
+                    alert('Unknown action.');
+                }
+            } catch (err) {
+                alert('Failed to parse JSON file.');
+            }
+            listWord();
+        };
+
+        reader.readAsText(file);
+    }
+
+    let editData = (word) => {
+        // Inputs
+        let wordInputEl = `<input
+            id="${word}-word"
+            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 flex-1 dark:bg-neutral-600 dark:border-none dark:hover:bg-neutral-500"
+            placeholder="${word}"
+            type="text"
+            value="${word}"
+            autocomplete="off"
+        />`
+        translation = getData(word)
+        let translationInputEl = `<input
+            id="${word}-translation"
+            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 flex-1 dark:bg-neutral-600 dark:border-none dark:hover:bg-neutral-500"
+            placeholder="${translation}"
+            type="text"
+            value="${translation}"
+            autocomplete="off"
+        />`
+        document.getElementById(`${word}-word`).innerHTML = wordInputEl;
+        document.getElementById(`${word}-translation`).innerHTML = translationInputEl;
+
+        // Buttons
+        let buttons = `<button onclick="editDataSave('${word}')" class="action-button">
+                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                    <polygon fill-rule="evenodd" points="9.707 14.293 19 5 20.414 6.414 9.707 17.121 4 11.414 5.414 10"/>
+                </svg>
+                <span class="sr-only">Ok</span>
+            </button>
+            <button onclick="editDataCancel('${word}')" class="action-button">
+                <svg class="h-4 w-4" height="8" viewBox="0 0 8 8" width="8" xmlns="http://www.w3.org/2000/svg"><path d="m1.41 0-1.41 1.41.72.72 1.78 1.81-1.78 1.78-.72.69 1.41 1.44.72-.72 1.81-1.81 1.78 1.81.69.72 1.44-1.44-.72-.69-1.81-1.78 1.81-1.81.72-.72-1.44-1.41-.69.72-1.78 1.78-1.81-1.78-.72-.72z"/></svg>
+                <span class="sr-only">Cancel</span>
+            </button>`
+        
+        document.getElementById(`${word}-actions`).innerHTML = buttons;
+    }
+
+
+
+    listWord();
+
+    b = document.getElementById('dropdownHoverButton')
+    dm = document.getElementById('dropdownMenu')
+
+    document.addEventListener('click', (event) => {
+        if (event.target == b || event.target.closest('#dropdownHoverButton')) {
+            // console.log('Toggling the state because clicked on a button')
+            document.getElementById('dropdownHover').classList.toggle('hidden');
+        } else if (event.target != b && event.target.parentElement != dm) {
+            // console.log('Hiding because clicked outside')
+            document.getElementById('dropdownHover').classList.add('hidden');
+        }
+
+    });
+
+    document.addEventListener('focusin', (event) => {
+/*         console.log("Focused on:", event.target);
+        // If event target is not dropdownHoverButton or its closest parent is not dropdownMenu
+        console.log("Parent: ",event.target.parentElement) */
+
+        if (event.target != b && event.target.parentElement != dm){
+            // console.log('Hiding because focuse is somewhere outside of menu')
+            document.getElementById('dropdownHover').classList.add('hidden');
+        }
+    });
+
+</script>
+</body>
+</html>
