@@ -1,9 +1,14 @@
 :root {
   font-size: 16px;
+  font-family: "Roboto Mono", monospace;
 }
 
 body {
   padding: 0 1rem;
+}
+
+body article {
+  max-width: 50rem;
 }
 
 header {
@@ -44,10 +49,9 @@ nav {
   display: flex;
   flex-direction: row;
   justify-content: normal;
-}
-
-article {
-  width: 100%;
+  article {
+    width: 100%;
+  }
 }
 
 .mainpage-latest {
@@ -56,6 +60,35 @@ article {
   h1 {
     font-size: 1.5em;
   }
+}
+
+.post {
+  border-top: 1px solid grey;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  em {
+    color: grey;
+    float: right;
+    margin-left: 1rem;
+  }
+  h3 {
+    display: inline;
+  }
+  p {
+    margin: 0.6rem 0 0 0;
+  }
+  p.date {
+    color: grey;
+    font-style: italic;
+  }
+}
+
+.post:last-child {
+  border-bottom: 1px solid grey;
+}
+
+footer {
+  margin-top: 1rem;
 }
 
 @media (max-width: 640px) {
@@ -82,5 +115,8 @@ article {
   a {
     color: rgb(138, 138, 244);
     font-weight: bold;
+  }
+  nav ul li a:visited {
+    color: rgb(138, 138, 244);
   }
 }
